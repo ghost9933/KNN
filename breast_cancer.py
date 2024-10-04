@@ -1,197 +1,94 @@
 from ucimlrepo import fetch_ucirepo
 from collections import Counter
 import numpy as np
-from sklearn.model_selection import train_test_split
-import math
-
-
-print("breast_cancer")
-# fetch dataset 
-breast_cancer = fetch_ucirepo(id=14) 
-  
-X = breast_cancer.data.features.to_numpy()
-y = breast_cancer.data.targets.to_numpy().ravel() 
-y = breast_cancer.data.targets 
-  
-# metadata 
-print(breast_cancer.metadata) 
-  
-# variable information 
-print(breast_cancer.variables) 
-
-
-
-for feature in X:
-    print(feature,dict(Counter(X[feature])))
-
-print('Target:',dict(Counter(y['Class'])))
-
-
-# distacne cal culations
-
-def euclidean_distance(x1:float, x2:float):
-    return math.sqrt(sum((a - b) ** 2 for a, b in zip(x1, x2)))
-
-def manhattan_distance(x1:float, x2:float):
-    return sum(abs(a - b) for a, b in zip(x1, x2))
-
-def minkowski_distance(x1:float, x2:float, p=3):
-    return sum(abs(a - b) ** p for a, b in zip(x1, x2)) ** (1/p)
-
-def hamming_distance(x1:float, x2:float):
-    return sum(a != b for a, b in zip(x1, x2)) / len(x1)
-
-
-
-class KNN:
-    def __init__(self, k=3, distance='euclidean', p=3):
-        self.k = k
-        self.distance = distance
-        self.p = p
-
-    def fit(self, X, y):
-        self.X_train = X
-        self.y_train = y
-
-    def predict(self, X):
-        y_pred = [self._predict(x) for x in X]
-        return y_pred
-
-    def _predict(self, x):
-        if self.distance == 'euclidean':
-            distances = [euclidean_distance(x, x_train) for x_train in self.X_train]
-        elif self.distance == 'manhattan':
-            distances = [manhattan_distance(x, x_train) for x_train in self.X_train]
-        elif self.distance == 'minkowski':
-            distances = [minkowski_distance(x, x_train, self.p) for x_train in self.X_train]
-        elif self.distance == 'hamming':
-            distances = [hamming_distance(x, x_train) for x_train in self.X_train]
-        else:
-            raise ValueError("Unsupported distance metric")
-        
- 
-        k_indices = sorted(range(len(distances)), key=lambda i: distances[i])[:self.k]
-        k_nearest_labels = [self.y_train[i] for i in k_indices]
-        
-
-        label_counts = {}
-        for label in k_nearest_labels:
-            if label in label_counts:
-                label_counts[label] += 1
-            else:
-                label_counts[label] = 1
-        
-
-        most_common_label = max(label_counts, key=label_counts.get)
-        return most_common_label
-    
-import random
-
-def accuracy_score(y_true, y_pred):
-    correct = sum(1 for true, pred in zip(y_true, y_pred) if true == pred)
-    return correct / len(y_true)
-
-def k_fold_cross_validation(model, X, y, k=10):
-    fold_size = len(X) // k
-    scores = []
-    indices = list(range(len(X)))
-    random.shuffle(indices)
-
-    for fold in range(k):
-        start, end = fold * fold_size, (fold + 1) * fold_size if fold < k-1 else len(X)
-        test_indices = indices[start:end]
-        train_indices = indices[:start] + indices[end:]
-
-        X_train = [X[i] for i in train_indices]
-        y_train = [y[i] for i in train_indices]
-        X_test = [X[i] for i in test_indices]
-        y_test = [y[i] for i in test_indices]
-
-        model.fit(X_train, y_train)
-        predictions = model.predict(X_test)
-        score = accuracy_score(y_test, predictions)
-        scores.append(score)
-
-    return sum(scores) / k, scores
-
-
-knn_euclidean = KNN(k=3, distance='euclidean')
-knn_manhattan = KNN(k=3, distance='manhattan')
-knn_minkowski = KNN(k=3, distance='minkowski', p=3) 
-knn_hamming = KNN(k=3, distance='hamming')
-mean_accuracy1, accuracies1 = k_fold_cross_validation(knn_euclidean, X, y, k=10)
-mean_accuracy2, accuracies2 = k_fold_cross_validation(knn_manhattan, X, y, k=10)
-mean_accuracy3, accuracies3 = k_fold_cross_validation(knn_minkowski, X, y, k=10)
-mean_accuracy4, accuracies4 = k_fold_cross_validation(knn_hamming, X, y, k=10)
-
-
-print(f"KNN Mean Accuracies:")
-print(f"Using Euclidean distance :{mean_accuracy1*100}%")
-print(f"Using Manhattan distance :{mean_accuracy2*100}%")
-print(f"Using Minkowski distance :{mean_accuracy3*100}%")
-print(f"Using Hamming distance :{mean_accuracy4*100}%")
-
-
-
-
-from sklearn.model_selection import cross_val_score
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, classification_report
+import csv
 
+# Fetch Dataset
+breast_cancer = fetch_ucirepo(id=14)
+X = breast_cancer.data.features
+y = breast_cancer.data.targets
 
-knn1 = KNeighborsClassifier(n_neighbors=3, metric='euclidean')
-knn2 = KNeighborsClassifier(n_neighbors=3, metric='manhattan')
-knn3 = KNeighborsClassifier(n_neighbors=3, metric='minkowski', p=3)
-knn4 = KNeighborsClassifier(n_neighbors=3, metric='hamming', algorithm='brute')
+# Read the .data File
+file_path = "./breast_cancer/breast-cancer.data"
+column_names = [
+    "recurrence_status", "age", "menopause", "tumor_size", "inv_nodes",
+    "node_caps", "deg_malig", "breast", "breast_quad", "irradiation"
+]
+data = []
+with open(file_path, "r") as file:
+    csv_reader = csv.reader(file, delimiter=",")
+    for row in csv_reader:
+        if row:
+            data.append(row)
 
-cv_scores1 = cross_val_score(knn1, X, y, cv=10)
-cv_scores2 = cross_val_score(knn2, X, y, cv=10)
-cv_scores3 = cross_val_score(knn3, X, y, cv=10)
-cv_scores4 = cross_val_score(knn4, X, y, cv=10)
+# Encode Data
+encodings = {
+    "recurrence_status": {"no-recurrence-events": 0, "recurrence-events": 1},
+    "age": {"10-19": 0, "20-29": 1, "30-39": 2, "40-49": 3, "50-59": 4, "60-69": 5, "70-79": 6},
+    "menopause": {"lt40": 0, "ge40": 1, "premeno": 2},
+    "tumor_size": {"0-4": 0, "5-9": 1, "10-14": 2, "15-19": 3, "20-24": 4, "25-29": 5, "30-34": 6, "35-39": 7, "40-44": 8, "45-49": 9, "50-54": 10},
+    "inv_nodes": {"0-2": 0, "3-5": 1, "6-8": 2, "9-11": 3, "12-14": 4, "15-17": 5, "18-20": 6, "21-23": 7, "24-26": 8},
+    "node_caps": {"no": 0, "yes": 1, "?": np.nan},
+    "deg_malig": {"1": 1, "2": 2, "3": 3},
+    "breast": {"left": 0, "right": 1},
+    "breast_quad": {"left_up": 0, "left_low": 1, "right_up": 2, "right_low": 3, "central": 4, "?": np.nan},
+    "irradiation": {"no": 0, "yes": 1}
+}
+for row in data:
+    for key, value in zip(column_names, row):
+        row[column_names.index(key)] = encodings[key][value.strip()]
 
+# Convert to Lists of Features and Labels
+X = [row[1:] for row in data]
+y = [row[0] for row in data]
 
-mean_accuracy1 = sum(cv_scores1) / len(cv_scores1)
-mean_accuracy2 = sum(cv_scores2) / len(cv_scores2)
-mean_accuracy3 = sum(cv_scores3) / len(cv_scores3)
-mean_accuracy4 = sum(cv_scores4) / len(cv_scores4)
+# Step 1: Handle Missing Values Using Imputer
+# Ensure no NaN values exist before scaling or applying PCA
+imputer = SimpleImputer(strategy='most_frequent')
+X_imputed = imputer.fit_transform(X)
 
+# Step 2: Scale Features Using Standard Scaler
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X_imputed)
 
-print(f"Sk-learn KNN Euclidean Mean Accuracy: {mean_accuracy1*100}%")
-print(f"Sk-learn KNN Manhattan Mean Accuracy: {mean_accuracy2*100}%")
-print(f"Sk-learn KNN Minkowski Mean Accuracy: {mean_accuracy3*100}%")
-print(f"Sk-learn KNN Hamming Mean Accuracy: {mean_accuracy4*100}%")
+# Step 3: Dimensionality Reduction with PCA
+pca = PCA(n_components=0.95)  # Retain 95% of the variance
+X_pca = pca.fit_transform(X_scaled)
 
+# Step 4: Split Data into Training and Test Sets
+X_train, X_test, y_train, y_test = train_test_split(X_pca, y, test_size=0.2, random_state=42)
 
+# Step 5: Hyperparameter Tuning for KNN
+param_grid = {
+    'n_neighbors': list(range(1, 21)),
+    'weights': ['uniform', 'distance'],
+    'metric': ['euclidean', 'manhattan', 'chebyshev']
+}
+grid_search = GridSearchCV(KNeighborsClassifier(), param_grid, cv=5)
+grid_search.fit(X_train, y_train)
+best_knn = grid_search.best_estimator_
 
-from scipy.stats import ttest_rel
+# Step 6: Train the Best Model and Evaluate
+y_pred = best_knn.predict(X_test)
 
-t_stat1, p_val1 = ttest_rel(accuracies1, cv_scores1) 
-t_stat2, p_val2 = ttest_rel(accuracies2, cv_scores2) 
-t_stat3, p_val3 = ttest_rel(accuracies3, cv_scores3) 
-t_stat4, p_val4 = ttest_rel(accuracies4, cv_scores4)
+# Step 7: Evaluate the Performance of the Model
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Best Parameters: {grid_search.best_params_}")
+print(f"Accuracy of Best KNN model: {accuracy:.2f}")
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
 
-alpha = 0.05
-    
-print(f"T-test results for KNN using Euclidean distance function:")
-print(f"T-statistic : {t_stat1}, P_value : {p_val1}")
-if p_val1 > alpha:
-    print(f"The difference betwwen Custom KNN model and Sklearn's KNN model is not statistically significant. We reject Null hypothesis.")
-else:
-    print(f"The difference is statistically different, we accept alternate hypothesis")
-print(f"\nT-test results for KNN using Manhattan distance function:")
-print(f"T-statistic : {t_stat2}, P_value : {p_val2}")
-if p_val2 > alpha:
-    print(f"The difference betwwen Custom KNN model and Sklearn's KNN model is not statistically significant. We reject Null hypothesis.")
-else:
-    print(f"The difference is statistically different, we accept alternate hypothesis")
-print(f"\nT-test results for KNN using Minkowski distance function:")
-print(f"T-statistic : {t_stat3}, P_value : {p_val3}")
-if p_val3 > alpha:
-    print(f"The difference betwwen Custom KNN model and Sklearn's KNN model is not statistically significant. We reject Null hypothesis.")
-else:
-    print(f"The difference is statistically different, we accept alternate hypothesis")
-print(f"\nT-test results for KNN using Hamming distance function:")
-print(f"T-statistic : {t_stat4}, P_value : {p_val4}")
-if p_val4 > alpha:
-    print(f"The difference betwwen Custom KNN model and Sklearn's KNN model is not statistically significant. We reject Null hypothesis.")
-else:
-    print(f"The difference is statistically different, we accept alternate hypothesis.")
+# Compare Performance Metrics
+print("\nComparison of Performance Metrics:")
+print(f"{'Metric':<15} {'Accuracy':<10} {'Precision':<10} {'Recall':<10} {'F1-Score':<10}")
+for i, params in enumerate(grid_search.cv_results_['params']):
+    metric = params['metric']
+    accuracy = grid_search.cv_results_['mean_test_score'][i]
+    print(f"{metric:<15} {accuracy:<10.2f}")
+
