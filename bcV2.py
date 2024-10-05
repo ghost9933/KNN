@@ -1,41 +1,8 @@
 import time
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report
 from myCustomKNN import CustomKNN
 import csv
-
-def process_dataset(file_path, column_names, encodings):
-    data = []
-    with open(file_path, "r") as file:
-        csv_reader = csv.reader(file, delimiter=",")
-        for row in csv_reader:
-            if row:
-                data.append(row)
-    for row in data:
-        for key, value in zip(column_names, row):
-            value = value.strip()
-            if value in encodings[key]:
-                row[column_names.index(key)] = encodings[key][value]
-            else:
-                row[column_names.index(key)] = None
-    X = [row[:-1] for row in data]
-    y = [row[-1] for row in data]
-    return X, y
-
-def replace_nan_and_question(X):
-    for i in range(len(X)):
-        for j in range(len(X[i])):
-            if X[i][j] == '?' or X[i][j] is None:
-                X[i][j] = None
-    return X
-
-def replace_none_with_most_frequent(X):
-    X_transposed = list(zip(*X))
-    for i, feature in enumerate(X_transposed):
-        non_none_values = [x for x in feature if x is not None]
-        most_frequent_value = max(set(non_none_values), key=non_none_values.count)
-        X_transposed[i] = [most_frequent_value if x is None else x for x in feature]
-    return [list(row) for row in zip(*X_transposed)]
 
 def standard_scaler_fit(X):
     mean = []
@@ -54,6 +21,39 @@ def standard_scaler_transform(X, mean, std):
         scaled_row = [(x - m) / s if s != 0 else 0 for x, m, s in zip(row, mean, std)]
         X_scaled.append(scaled_row)
     return X_scaled
+
+def process_dataset(file_path, column_names, encodings):
+    data = []
+    with open(file_path, "r") as file:
+        csv_reader = csv.reader(file, delimiter=",")
+        for row in csv_reader:
+            if row:
+                data.append(row)
+    for row in data:
+        for key, value in zip(column_names, row):
+            value = value.strip()
+            if value in encodings[key]:
+                row[column_names.index(key)] = encodings[key][value]
+            else:
+                row[column_names.index(key)] = None
+    X = [row[1:] for row in data]
+    y = [row[0] for row in data]
+    return X, y
+
+def replace_nan_and_question(X):
+    for i in range(len(X)):
+        for j in range(len(X[i])):
+            if X[i][j] == '?' or X[i][j] is None:
+                X[i][j] = None
+    return X
+
+def replace_none_with_most_frequent(X):
+    X_transposed = list(zip(*X))
+    for i, feature in enumerate(X_transposed):
+        non_none_values = [x for x in feature if x is not None]
+        most_frequent_value = max(set(non_none_values), key=non_none_values.count)
+        X_transposed[i] = [most_frequent_value if x is None else x for x in feature]
+    return [list(row) for row in zip(*X_transposed)]
 
 def k_fold_cross_validation(X, y, k, model, custom=False):
     fold_size = len(X) // k
@@ -74,6 +74,11 @@ def k_fold_cross_validation(X, y, k, model, custom=False):
     return sum(accuracies) / len(accuracies)
 
 def main(X_scaled, y, k=10):
+    param_grid = {
+        'n_neighbors': list(range(1, 21)),
+        'weights': ['uniform', 'distance'],
+        'metric': ['euclidean', 'manhattan', 'chebyshev', 'hamming', 'cosine']
+    }
     print("\nTesting CustomKNN with K-Fold Cross-Validation...")
     best_params_custom = {'n_neighbors': 5, 'weights': 'distance', 'metric': 'euclidean'}
     knn_custom = CustomKNN(n=best_params_custom['n_neighbors'],
@@ -101,16 +106,22 @@ def main(X_scaled, y, k=10):
     print(f"Time taken by CustomKNN: {end_time_custom:.2f} seconds")
 
 if __name__ == "__main__":
-    file_path = "./car_evaluation/car.data"
-    column_names = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety', 'class']
+    file_path = "./breast_cancer/breast-cancer.data"
+    column_names = [
+        "recurrence_status", "age", "menopause", "tumor_size", "inv_nodes",
+        "node_caps", "deg_malig", "breast", "breast_quad", "irradiation"
+    ]
     encodings = {
-        'buying': {'vhigh': 3, 'high': 2, 'med': 1, 'low': 0},
-        'maint': {'vhigh': 3, 'high': 2, 'med': 1, 'low': 0},
-        'doors': {'2': 0, '3': 1, '4': 2, '5more': 3},
-        'persons': {'2': 0, '4': 1, 'more': 2},
-        'lug_boot': {'small': 0, 'med': 1, 'big': 2},
-        'safety': {'low': 0, 'med': 1, 'high': 2},
-        'class': {'unacc': 0, 'acc': 1, 'good': 2, 'vgood': 3}
+        "recurrence_status": {"no-recurrence-events": 0, "recurrence-events": 1},
+        "age": {"10-19": 0, "20-29": 1, "30-39": 2, "40-49": 3, "50-59": 4, "60-69": 5, "70-79": 6},
+        "menopause": {"lt40": 0, "ge40": 1, "premeno": 2},
+        "tumor_size": {"0-4": 0, "5-9": 1, "10-14": 2, "15-19": 3, "20-24": 4, "25-29": 5, "30-34": 6, "35-39": 7, "40-44": 8, "45-49": 9, "50-54": 10},
+        "inv_nodes": {"0-2": 0, "3-5": 1, "6-8": 2, "9-11": 3, "12-14": 4, "15-17": 5, "18-20": 6, "21-23": 7, "24-26": 8},
+        "node_caps": {"no": 0, "yes": 1, "?": None},
+        "deg_malig": {"1": 1, "2": 2, "3": 3},
+        "breast": {"left": 0, "right": 1},
+        "breast_quad": {"left_up": 0, "left_low": 1, "right_up": 2, "right_low": 3, "central": 4, "?": None},
+        "irradiation": {"no": 0, "yes": 1}
     }
     X, y = process_dataset(file_path, column_names, encodings)
     X_cleaned = replace_nan_and_question(X)
