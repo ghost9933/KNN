@@ -2,10 +2,14 @@ import time
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split, GridSearchCV
-from myCustomKNN import CustomKNN
-from Scalers import *  # Assuming you have the Scalers defined for standard scaling and min-max scaling
 import csv
-from ucimlrepo import fetch_ucirepo
+
+
+# Importing my code 
+from myCustomKNN import CustomKNN
+from Scalers import *
+from kFold import *
+from cleanHelpers import *
 
 def process_dataset(file_path, column_names, encodings):
     data = []
@@ -27,21 +31,21 @@ def process_dataset(file_path, column_names, encodings):
     return X, y
 
 
-def replace_nan_and_question(X):
-    for i in range(len(X)):
-        for j in range(len(X[i])):
-            if X[i][j] == '?' or (isinstance(X[i][j], float) and math.isnan(X[i][j])):
-                X[i][j] = None
-    return X
+# def replace_nan_and_question(X):
+#     for i in range(len(X)):
+#         for j in range(len(X[i])):
+#             if X[i][j] == '?' or (isinstance(X[i][j], float) and math.isnan(X[i][j])):
+#                 X[i][j] = None
+#     return X
 
 
-def replace_none_with_most_frequent(X):
-    X_transposed = list(zip(*X))
-    for i, feature in enumerate(X_transposed):
-        non_none_values = [x for x in feature if x is not None]
-        most_frequent_value = max(set(non_none_values), key=non_none_values.count)
-        X_transposed[i] = [most_frequent_value if x is None else x for x in feature]
-    return list(zip(*X_transposed))
+# def replace_none_with_most_frequent(X):
+#     X_transposed = list(zip(*X))
+#     for i, feature in enumerate(X_transposed):
+#         non_none_values = [x for x in feature if x is not None]
+#         most_frequent_value = max(set(non_none_values), key=non_none_values.count)
+#         X_transposed[i] = [most_frequent_value if x is None else x for x in feature]
+#     return list(zip(*X_transposed))
 
 
 def custom_knn_grid_search(X_train, y_train, X_test, y_test, param_grid):
