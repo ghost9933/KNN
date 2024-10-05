@@ -126,6 +126,9 @@ print(f"Original KNN Accuracy: {accuracy_original:.2f}")
 print(f"Original KNN Time Taken: {original_knn_time:.2f} seconds")
 print(f"Original KNN CPU Usage: {original_knn_cpu:.2f}%")
 
+
+
+
 # Print comparison of accuracies and performance
 print("\n--- Comparison of Custom KNN vs Original KNN ---")
 print(f"Original KNN Accuracy: {accuracy_original:.2f}")
