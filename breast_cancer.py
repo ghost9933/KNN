@@ -70,70 +70,145 @@ def custom_knn_grid_search(X_train, y_train, X_test, y_test, param_grid):
     return best_model, best_params, best_accuracy, best_time
 
 
-def main(file_path, test_size=0.2, random_state=42, param_grid=None):
-    if param_grid is None:
-        param_grid = {
-            'n_neighbors': list(range(1, 21)),
-            'weights': ['uniform', 'distance'],
-            'metric': ['euclidean', 'manhattan', 'chebyshev', 'hamming', 'cosine']
-        }
+def main(X_scaled, y, k=10):
+    # if param_grid is None:
+    #     param_grid = {
+    #         'n_neighbors': list(range(1, 21)),
+    #         'weights': ['uniform', 'distance'],
+    #         'metric': ['euclidean', 'manhattan', 'chebyshev', 'hamming', 'cosine']
+    #     }
 
     
 
-    # Split Data into Training and Test Sets
-    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=test_size, random_state=random_state)
+    # # Split Data into Training and Test Sets
+    # X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=test_size, random_state=random_state)
 
    
-    # CustomKNN Grid Search
-    print("\nTuning CustomKNN...")
-    best_knn_custom, best_params_custom, accuracy_custom, custom_knn_time = custom_knn_grid_search(
-        X_train, y_train, X_test, y_test, param_grid
-    )
+    # # CustomKNN Grid Search
+    # print("\nTuning CustomKNN...")
+    # best_knn_custom, best_params_custom, accuracy_custom, custom_knn_time = custom_knn_grid_search(
+    #     X_train, y_train, X_test, y_test, param_grid
+    # )
 
-    print(f"\nBest Parameters (CustomKNN): {best_params_custom}")
-    print(f"Accuracy of Best CustomKNN model: {accuracy_custom:.2f}")
-    print(f"Time taken by CustomKNN: {custom_knn_time:.2f} seconds")
-    y_pred_custom = best_knn_custom.predict(X_test)
-    print("\nClassification Report (CustomKNN):")
-    print(classification_report(y_test, y_pred_custom))
+    # print(f"\nBest Parameters (CustomKNN): {best_params_custom}")
+    # print(f"Accuracy of Best CustomKNN model: {accuracy_custom:.2f}")
+    # print(f"Time taken by CustomKNN: {custom_knn_time:.2f} seconds")
+    # y_pred_custom = best_knn_custom.predict(X_test)
+    # print("\nClassification Report (CustomKNN):")
+    # print(classification_report(y_test, y_pred_custom))
 
 
-    # Extract the best parameters from CustomKNN
-    n_neighbors, weights, metric = best_params_custom.values()
+    # # Extract the best parameters from CustomKNN
+    # n_neighbors, weights, metric = best_params_custom.values()
 
-    # Test Scikit-learn KNN with the same hyperparameters as CustomKNN
-    print(f"\nTesting Scikit-learn KNN with CustomKNN best parameters: {best_params_custom}")
+    # # Test Scikit-learn KNN with the same hyperparameters as CustomKNN
+    # print(f"\nTesting Scikit-learn KNN with CustomKNN best parameters: {best_params_custom}")
+    # start_time_sklearn = time.time()
+
+    # # Initialize and fit Scikit-learn KNN
+    # knn_sklearn = KNeighborsClassifier(n_neighbors=n_neighbors, weights=weights, metric=metric)
+    # knn_sklearn.fit(X_train, y_train)
+
+    # # Predict and evaluate
+    # y_pred_sklearn = knn_sklearn.predict(X_test)
+    # accuracy_sklearn = accuracy_score(y_test, y_pred_sklearn)
+    # end_time_sklearn = time.time() - start_time_sklearn
+
+    # # Display results
+    # print(f"\nAccuracy (Scikit-learn KNN with CustomKNN best parameters): {accuracy_sklearn:.2f}")
+    # print(f"Time taken (Scikit-learn KNN): {end_time_sklearn:.2f} seconds")
+    # print("\nClassification Report (Scikit-learn KNN):")
+    # print(classification_report(y_test, y_pred_sklearn))
+
+    # # Performance comparison
+    # print("\n--- Performance Comparison ---")
+    # print(f"CustomKNN Accuracy: {accuracy_custom:.2f}")
+    # print(f"Scikit-learn KNN Accuracy: {accuracy_sklearn:.2f}")
+    # print(f"CustomKNN Time Taken: {custom_knn_time:.2f} seconds")
+    # print(f"Scikit-learn KNN Time Taken: {end_time_sklearn:.2f} seconds")
+
+
+    # # Step 3: Compare the performance of Scikit-learn KNN and CustomKNN
+    # print("\n--- Performance Comparison: Scikit-learn KNN vs CustomKNN ---")
+    # print(f"Scikit-learn KNN Accuracy: {accuracy_sklearn:.2f}")
+    # print(f"CustomKNN Accuracy: {accuracy_custom:.2f}")
+    # print(f"Time taken by Scikit-learn KNN: {end_time_sklearn:.2f} seconds")
+    # print(f"Time taken by CustomKNN: {custom_knn_time:.2f} seconds")
+
+    param_grid = {
+        'n_neighbors': list(range(1, 21)),
+        'weights': ['uniform', 'distance'],
+        'metric': ['euclidean', 'manhattan', 'chebyshev', 'hamming', 'cosine']
+    }
+
+    # Step 1: Test CustomKNN with K-Fold Cross-Validation
+    print("\nTesting CustomKNN with K-Fold Cross-Validation...")
+    best_params_custom = {'n_neighbors': 5, 'weights': 'distance', 'metric': 'euclidean'}
+    knn_custom = CustomKNN(n=best_params_custom['n_neighbors'],
+                           task='classification',
+                           weights=best_params_custom['weights'],
+                           metric=best_params_custom['metric'])
+
+    start_time_custom = time.time()
+    accuracy_custom = k_fold_cross_validation(X_scaled, y, k, knn_custom, custom=True)
+    end_time_custom = time.time() - start_time_custom
+    print(f"\nCustomKNN Mean Accuracy: {accuracy_custom:.2f}")
+    print(f"Time taken by CustomKNN: {end_time_custom:.2f} seconds")
+
+    # Step 2: Test Scikit-learn KNN with K-Fold Cross-Validation
+    print("\nTesting Scikit-learn KNN with K-Fold Cross-Validation...")
+    knn_sklearn = KNeighborsClassifier(n_neighbors=best_params_custom['n_neighbors'],
+                                       weights=best_params_custom['weights'],
+                                       metric=best_params_custom['metric'])
+
     start_time_sklearn = time.time()
-
-    # Initialize and fit Scikit-learn KNN
-    knn_sklearn = KNeighborsClassifier(n_neighbors=n_neighbors, weights=weights, metric=metric)
-    knn_sklearn.fit(X_train, y_train)
-
-    # Predict and evaluate
-    y_pred_sklearn = knn_sklearn.predict(X_test)
-    accuracy_sklearn = accuracy_score(y_test, y_pred_sklearn)
+    accuracy_sklearn = k_fold_cross_validation(X_scaled, y, k, knn_sklearn, custom=False)
     end_time_sklearn = time.time() - start_time_sklearn
-
-    # Display results
-    print(f"\nAccuracy (Scikit-learn KNN with CustomKNN best parameters): {accuracy_sklearn:.2f}")
-    print(f"Time taken (Scikit-learn KNN): {end_time_sklearn:.2f} seconds")
-    print("\nClassification Report (Scikit-learn KNN):")
-    print(classification_report(y_test, y_pred_sklearn))
-
-    # Performance comparison
-    print("\n--- Performance Comparison ---")
-    print(f"CustomKNN Accuracy: {accuracy_custom:.2f}")
-    print(f"Scikit-learn KNN Accuracy: {accuracy_sklearn:.2f}")
-    print(f"CustomKNN Time Taken: {custom_knn_time:.2f} seconds")
-    print(f"Scikit-learn KNN Time Taken: {end_time_sklearn:.2f} seconds")
-
+    print(f"\nScikit-learn KNN Mean Accuracy: {accuracy_sklearn:.2f}")
+    print(f"Time taken by Scikit-learn KNN: {end_time_sklearn:.2f} seconds")
 
     # Step 3: Compare the performance of Scikit-learn KNN and CustomKNN
     print("\n--- Performance Comparison: Scikit-learn KNN vs CustomKNN ---")
     print(f"Scikit-learn KNN Accuracy: {accuracy_sklearn:.2f}")
     print(f"CustomKNN Accuracy: {accuracy_custom:.2f}")
     print(f"Time taken by Scikit-learn KNN: {end_time_sklearn:.2f} seconds")
-    print(f"Time taken by CustomKNN: {custom_knn_time:.2f} seconds")
+    print(f"Time taken by CustomKNN: {end_time_custom:.2f} seconds")
+
+
+
+def k_fold_cross_validation(X, y, k, model, custom=False):
+    fold_size = len(X) // k
+    accuracies = []
+    fold_indices = list(range(len(X)))
+
+    for i in range(k):
+        # Create training and testing sets for the current fold
+        test_indices = fold_indices[i * fold_size:(i + 1) * fold_size]
+        train_indices = fold_indices[:i * fold_size] + fold_indices[(i + 1) * fold_size:]
+
+        X_train = [X[i] for i in train_indices]
+        y_train = [y[i] for i in train_indices]
+        X_test = [X[i] for i in test_indices]
+        y_test = [y[i] for i in test_indices]
+
+        # Train the model and evaluate performance on the test fold
+        if custom:
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+        else:
+            model.fit(X_train, y_train)  # Scikit-learn's KNN doesn't need np.array, pass lists
+            y_pred = model.predict(X_test)
+
+        # Calculate accuracy for the current fold
+        accuracy = sum([1 if pred == actual else 0 for pred, actual in zip(y_pred, y_test)]) / len(y_test)
+        accuracies.append(accuracy)
+
+        # Print fold results
+        print(f"Fold {i + 1}: Accuracy = {accuracy:.2f}")
+
+    # Return the mean accuracy across all folds
+    return sum(accuracies) / len(accuracies)
+
 
 
 if __name__ == "__main__":
@@ -164,4 +239,4 @@ if __name__ == "__main__":
     mean, std = standard_scaler_fit(X_imputed)
     X_scaled = standard_scaler_transform(X_imputed, mean, std)
 
-    main(X_scaled)
+    main(X_scaled,y, k=5)
