@@ -1,24 +1,20 @@
 def standard_scaler_fit(X):
-    n = len(X)
-    if n == 0:
-        return [], []
-    X_T = list(zip(*X))
-    mean = [sum(col) / n for col in X_T]
-    std = [
-        (sum((x - mu) ** 2 for x in col) / n) ** 0.5
-        for col, mu in zip(X_T, mean)
-    ]
+    mean = []
+    std = []
+    for i in range(len(X[0])):
+        col = [row[i] for row in X]
+        mean_i = sum(col) / len(col)
+        std_i = (sum((x - mean_i) ** 2 for x in col) / len(col)) ** 0.5
+        mean.append(mean_i)
+        std.append(std_i)
     return mean, std
 
 def standard_scaler_transform(X, mean, std):
-    result = []
+    X_scaled = []
     for row in X:
-        scaled_row = [
-            (x - mu) / sigma if sigma != 0 else 0
-            for x, mu, sigma in zip(row, mean, std)
-        ]
-        result.append(scaled_row)
-    return result
+        scaled_row = [(x - m) / s if s != 0 else 0 for x, m, s in zip(row, mean, std)]
+        X_scaled.append(scaled_row)
+    return X_scaled
 
 def min_max_scaler_fit(X):
     if not X:
