@@ -34,3 +34,17 @@ def replace_none_with_mode(y):
     else:
         y = [0.0 if value is None else float(value) for value in y]
     return y
+
+def map_metric_to_sklearn(metric):
+    metric_mapping = {
+        'euclidean': 'euclidean',
+        'manhattan': 'manhattan',
+        'chebyshev': 'chebyshev',
+        'cosine': 'cosine',
+        'minkowski_3': ('minkowski', 3),
+        'minkowski_4': ('minkowski', 4),
+        'minkowski_5': ('minkowski', 5),
+        'minkowski_10': ('minkowski', 10)
+    }
+
+    return metric_mapping.get(metric, 'euclidean')

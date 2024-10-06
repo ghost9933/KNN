@@ -8,7 +8,7 @@ class CustomKNN:
             raise ValueError("n_neighbors should be an integer")
         self.neighbors = n
         self.metric = metric.lower()
-        if self.metric not in CustomKNN.valid_metrics: 
+        if self.metric not in CustomKNN.valid_metrics and not self.metric.startswith('minkowski'):
             raise ValueError("Invalid metric. Metric should be one of 'euclidean', 'manhattan', 'chebyshev', 'hamming', 'cosine'")
         if task not in {'classification','regression'}:
             raise ValueError("task should be either classification or regression")
@@ -36,6 +36,9 @@ class CustomKNN:
                 magnitude_x1 = math.sqrt(sum(a ** 2 for a in x1))
                 magnitude_x2 = math.sqrt(sum(b ** 2 for b in x2))
                 return 1 - (dot_product / (magnitude_x1 * magnitude_x2))
+            elif self.metric.startswith('minkowski'):
+                p = float(self.metric.split('_')[1])
+                return sum(abs(a - b) ** p for a, b in zip(x1, x2)) ** (1/p)
             else:
                 raise ValueError(f"Unsupported metric: {self.metric}")
         except Exception as e:
