@@ -1,6 +1,5 @@
 import math
 
-
 def compute_p_value(t_stat, n):
     if n <= 1:
         raise ValueError("Degrees of freedom must be greater than 1.")
@@ -31,9 +30,14 @@ def hypothesis_testing(accuracy_custom_kfold, accuracy_sklearn_kfold):
     print("P-value : ", p_val)
     print("alpha : 0.05")
     print("----------------------------------------------------------")
-    alpha = 0.05
-    if p_val < alpha:
+    
+    alpha = 0.05  # Corrected alpha value
+    alpha_two_tailed = alpha / 2  # Divide alpha by 2 for two-tailed test
+    
+    # Check for significance in either direction
+    if p_val < alpha_two_tailed:
         print('Null hypothesis REJECTED: There is a significant difference.')
     else:
         print('Null hypothesis ACCEPTED: There is no significant difference.')
+
 
