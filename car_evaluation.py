@@ -3,12 +3,8 @@ import csv
 # Importing my code 
 from Scalers import *
 from cleanHelpers import *
-from splitdata import *
-from hypoTesting import *
-
 from mainDriver import main
 
-# Function to process dataset and perform encoding
 def process_dataset(file_path, column_names, encodings):
     data = []
     with open(file_path, "r") as file:
@@ -24,59 +20,10 @@ def process_dataset(file_path, column_names, encodings):
                 row[column_names.index(key)] = encodings[key][value]
             else:
                 row[column_names.index(key)] = None
-
-    # Split into features and labels
     X = [row[:-1] for row in data]  # Features
     y = [row[-1] for row in data]   # Labels
 
     return X, y
-
-
-# Main function to evaluate both CustomKNN and Scikit-learn KNN
-# def main(X_scaled, y, k=10):
-#     # Parameter grid for KNN hyperparameters
-#     param_grid = {
-#         'n_neighbors': list(range(1, 21)),
-#         'weights': ['uniform', 'distance'],
-#         'metric': ['euclidean', 'manhattan', 'chebyshev', 'cosine']
-#     }
-
-#     print("\nPerforming 75-25 split to find the best hyperparameters...")
-#     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.25, stratify=y, random_state=42)
-
-#     print("\nTuning CustomKNN using the 70-25 split...")
-#     best_knn_custom, best_params_custom, accuracy_custom = custom_knn_grid_search(X_train, y_train, X_test, y_test, param_grid)
-
-#     print(f"\nBest Parameters (CustomKNN): {best_params_custom}")
-#     print(f"Accuracy on 70-25 split: {accuracy_custom:.2f}")
-
-#     knn_custom = dbKNN(n=best_params_custom['n_neighbors'],
-#                            task='classification',
-#                            weights=best_params_custom['weights'],
-#                            metric=best_params_custom['metric'])
-
-#     knn_sklearn = KNeighborsClassifier(n_neighbors=best_params_custom['n_neighbors'],
-#                                        weights=best_params_custom['weights'],
-#                                        metric=best_params_custom['metric'])
-
-#     print("\nTesting both CustomKNN and Scikit-learn KNN with K-Fold Cross-Validation...")
-
-#     start_time = time.time()
-#     accuracy_custom_kfold, accuracy_sklearn_kfold, accuracyCusArr, accuracySkArr = k_fold_cross_validation(X_scaled, y, k, knn_custom, knn_sklearn)
-#     total_time = time.time() - start_time
-
-#     print(f"\nCustomKNN Mean Accuracy (K-Fold): {accuracy_custom_kfold:.2f}")
-#     print(f"Scikit-learn KNN Mean Accuracy (K-Fold): {accuracy_sklearn_kfold:.2f}")
-#     print(f"Time taken by both models with K-Fold: {total_time:.2f} seconds")
-
-#     # Compare the performance of Scikit-learn KNN and CustomKNN
-#     print("\n--- Performance Comparison: Scikit-learn KNN vs CustomKNN ---")
-#     print(f"CustomKNN Mean Accuracy: {accuracy_custom_kfold:.2f}")
-#     print(f"Scikit-learn KNN Mean Accuracy: {accuracy_sklearn_kfold:.2f}")
-#     print(f"Time taken by both models with K-Fold: {total_time:.2f} seconds")
-
-#     # Perform hypothesis testing
-#     hypothesis_testing(accuracyCusArr, accuracySkArr)
 
 
 # Running the script

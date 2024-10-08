@@ -8,14 +8,13 @@ from Scalers import *
 from kFold import *
 from cleanHelpers import *
 from hyperParamTune import *
-from splitdata import *
 from hypoTesting import *
 
 def main(X_scaled, y, k=10, ):
     
 
     param_grid = {
-        'n_neighbors': list(range(1, 8)),
+        'n_neighbors': list(range(1, 5)),
         'weights': ['uniform', 'distance'],
         'metric': ['euclidean', 'manhattan', 'cosine'],
     }
