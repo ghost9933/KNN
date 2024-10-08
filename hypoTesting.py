@@ -31,11 +31,11 @@ def hypothesis_testing(accuracy_custom_kfold, accuracy_sklearn_kfold):
     print("alpha : 0.05")
     print("----------------------------------------------------------")
     
-    alpha = 0.05  # Corrected alpha value
-    alpha_two_tailed = alpha / 2  # Divide alpha by 2 for two-tailed test
+    alpha = 0.05  
+    # alpha_two_tailed = alpha /2  # Divide alpha by 2 for two-tailed test
     
     # Check for significance in either direction
-    if p_val < alpha_two_tailed:
+    if p_val < alpha:
         print('Null hypothesis REJECTED: There is a significant difference.')
     else:
         print('Null hypothesis ACCEPTED: There is no significant difference.')
