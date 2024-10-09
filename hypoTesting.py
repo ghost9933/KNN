@@ -23,7 +23,7 @@ def paired_t_test(sample1, sample2):
 
 def hypothesis_testing(accuracy_custom_kfold, accuracy_sklearn_kfold):
     print("\nHYPOTHESIS TESTING")
-    print("CustomKNN accuracies:", accuracy_custom_kfold)
+    print("Enhanced KNN accuracies:", accuracy_custom_kfold)
     print("Scikit-learn KNN accuracies:", accuracy_sklearn_kfold)
     t_val, p_val = paired_t_test(accuracy_custom_kfold, accuracy_sklearn_kfold)
     print("T-value : ", t_val)

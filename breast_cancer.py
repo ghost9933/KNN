@@ -30,7 +30,7 @@ if __name__ == "__main__":
         "recurrence_status", "age", "menopause", "tumor_size", "inv_nodes",
         "node_caps", "deg_malig", "breast", "breast_quad", "irradiation"
     ]
-
+    # mapping for coverting the categorical to numerical 
     encodings = {
         "recurrence_status": {"no-recurrence-events": 0, "recurrence-events": 1},
         "age": {"10-19": 0, "20-29": 1, "30-39": 2, "40-49": 3, "50-59": 4, "60-69": 5, "70-79": 6},

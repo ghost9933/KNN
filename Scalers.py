@@ -47,39 +47,4 @@ def median(lst):
     else:
         return sorted_lst[mid]
 
-def percentile(lst, percentile_rank):
-    n = len(lst)
-    sorted_lst = sorted(lst)
-    k = (n - 1) * percentile_rank
-    f = int(k)
-    c = k - f
-    if f + 1 < n:
-        return sorted_lst[f] + c * (sorted_lst[f + 1] - sorted_lst[f])
-    else:
-        return sorted_lst[f]
 
-def robust_scaler_fit(X):
-    if not X:
-        return [], []
-    X_T = list(zip(*X))
-    medians = []
-    iqrs = []
-    for col in X_T:
-        col_list = list(col)
-        med = median(col_list)
-        q1 = percentile(col_list, 0.25)
-        q3 = percentile(col_list, 0.75)
-        iqr = q3 - q1
-        medians.append(med)
-        iqrs.append(iqr)
-    return medians, iqrs
-
-def robust_scaler_transform(X, medians, iqrs):
-    result = []
-    for row in X:
-        scaled_row = [
-            (x - med) / iqr if iqr != 0 else 0
-            for x, med, iqr in zip(row, medians, iqrs)
-        ]
-        result.append(scaled_row)
-    return result
